@@ -231,7 +231,7 @@
     <header>
       <div>
         <h1>P のグラフ</h1>
-        <p class="formula">P = 1 / { 1 + [ Time<sub>i</sub> p e<sup>f(t + S<sub>p</sub>)</sup> / F ]<sup>1 / f<sub>s</sub></sup> }</p>
+        <p class="formula">P = 1 / { 1 + exp((τ + S<sub>p</sub>) / s) (Time<sub>ip</sub> / F)<sup>1 / (f s)</sup> }</p>
       </div>
       <section class="value-box" aria-live="polite">
         <p class="value-label">現在の P</p>
@@ -246,13 +246,13 @@
 
       <aside class="controls">
         <div class="control-row">
-          <label for="timeSlider">Time<sub>i</sub> を動かす <output id="timeOut">3.00</output></label>
+          <label for="timeSlider">Time<sub>ip</sub> を動かす <output id="timeOut">3.00</output></label>
           <input id="timeSlider" type="range" min="0.01" max="30" value="3" step="0.01">
         </div>
 
         <div class="two-cols">
           <div class="control-row">
-            <label for="timeNumber">Time<sub>i</sub></label>
+            <label for="timeNumber">Time<sub>ip</sub></label>
             <input id="timeNumber" type="number" min="0.01" max="30" value="3" step="0.01">
           </div>
           <div class="control-row">
@@ -267,7 +267,7 @@
         </div>
 
         <div class="control-row">
-          <label for="peParam">p <output id="peOut">1.00</output></label>
+          <label for="peParam">s <output id="peOut">1.00</output></label>
           <input id="peParam" type="range" min="0.01" max="5" value="1" step="0.01">
         </div>
 
@@ -286,29 +286,22 @@
           <input id="spParam" type="range" min="0.01" max="10" value="1" step="0.01">
         </div>
 
-        <div class="control-row">
-          <label for="fsParam">f<sub>s</sub> <output id="fsOut">1.25</output></label>
-          <input id="fsParam" type="range" min="0.1" max="5" value="1.25" step="0.01">
-        </div>
-
         <div class="readouts">
-          <div class="readout"><span>Time<sub>i</sub></span><strong id="timeReadout">3.00</strong></div>
+          <div class="readout"><span>Time<sub>ip</sub></span><strong id="timeReadout">3.00</strong></div>
           <div class="readout"><span>P</span><strong id="pReadout">0.5000</strong></div>
         </div>
 
         <button id="resetButton" type="button">初期値に戻す</button>
-        <p class="note">Time<sub>i</sub> p e<sup>f(t + S<sub>p</sub>)</sup> が大きいほど P が下がる形にしています。</p>
+        <p class="note">PDFの Retrieval Probability Equation と Retrieval Time Equation から M<sub>ip</sub> を消去した式です。</p>
 
         <ul class="argument-list" aria-label="引数の説明">
           <li><strong>P</strong><span>成功確率、または答えられる確率を表す値。0 から 1 の範囲。</span></li>
-          <li><strong>Time<sub>i</sub></strong><span>対象項目 i にかかる時間。大きいほど P は下がる。</span></li>
-          <li><strong>p</strong><span>Time<sub>i</sub> にかかる係数。大きいほど P は下がる。</span></li>
-          <li><strong>e</strong><span>自然対数の底。式では指数関数 e<sup>f(t + S<sub>p</sub>)</sup> として使う。</span></li>
-          <li><strong>f</strong><span>指数部分の係数。大きいほど e<sup>f(t + S<sub>p</sub>)</sup> が大きくなり、P は下がる。</span></li>
-          <li><strong>t</strong><span>基準時間、または固定的に加わる時間成分。</span></li>
-          <li><strong>S<sub>p</sub></strong><span>処理・探索に関する追加成分。t と足して使う。</span></li>
-          <li><strong>F</strong><span>分母側の基準値。大きいほど P は上がる。</span></li>
-          <li><strong>f<sub>s</sub></strong><span>曲線の下がり方を調整する指数パラメータ。</span></li>
+          <li><strong>Time<sub>ip</sub></strong><span>チャンク i をプロダクション p で検索する時間。大きいほど P は下がる。</span></li>
+          <li><strong>F</strong><span>検索時間の尺度パラメータ。大きいほど P は上がる。</span></li>
+          <li><strong>f</strong><span>検索時間式の活性化スケール。大きいほど Time<sub>ip</sub> の影響がゆるやかになる。</span></li>
+          <li><strong>τ</strong><span>検索閾値。大きいほど P は下がる。</span></li>
+          <li><strong>S<sub>p</sub></strong><span>プロダクション p の強さ。ここでは τ と同じ向きで P を下げる項として入る。</span></li>
+          <li><strong>s</strong><span>活性化ノイズの尺度。大きいほど τ + S<sub>p</sub> の影響がゆるやかになる。</span></li>
         </ul>
       </aside>
     </section>
@@ -325,7 +318,6 @@
       smallFParam: document.getElementById("smallFParam"),
       tauParam: document.getElementById("tauParam"),
       spParam: document.getElementById("spParam"),
-      fsParam: document.getElementById("fsParam"),
       pValue: document.getElementById("pValue"),
       pReadout: document.getElementById("pReadout"),
       timeReadout: document.getElementById("timeReadout"),
@@ -335,7 +327,6 @@
       smallFOut: document.getElementById("smallFOut"),
       tauOut: document.getElementById("tauOut"),
       spOut: document.getElementById("spOut"),
-      fsOut: document.getElementById("fsOut"),
       resetButton: document.getElementById("resetButton")
     };
 
@@ -343,11 +334,10 @@
       time: 3,
       maxTime: 30,
       F: 3,
-      p: 1,
+      s: 1,
       smallF: 1,
       tau: 0,
-      sp: 1,
-      fs: 1.25
+      sp: 1
     };
 
     let state = { ...defaults };
@@ -358,9 +348,10 @@
     }
 
     function pFormula(time, params = state) {
-      const numeratorPart = time * params.p * Math.exp(params.smallF * (params.tau + params.sp));
-      if (params.F <= 0 || numeratorPart < 0 || params.fs <= 0) return 0;
-      return 1 / (1 + Math.pow(numeratorPart / params.F, 1 / params.fs));
+      if (params.F <= 0 || params.smallF <= 0 || params.s <= 0 || time <= 0) return 0;
+      const thresholdTerm = Math.exp((params.tau + params.sp) / params.s);
+      const timeTerm = Math.pow(time / params.F, 1 / (params.smallF * params.s));
+      return 1 / (1 + thresholdTerm * timeTerm);
     }
 
     function clamp(value, min, max) {
@@ -372,11 +363,10 @@
       state.maxTime = maxTime;
       state.time = clamp(num(source === "number" ? ids.timeNumber.value : ids.timeSlider.value, state.time), 0.01, maxTime);
       state.F = clamp(num(ids.fParam.value, state.F), 0.01, 30);
-      state.p = clamp(num(ids.peParam.value, state.p), 0.01, 5);
+      state.s = clamp(num(ids.peParam.value, state.s), 0.01, 5);
       state.smallF = clamp(num(ids.smallFParam.value, state.smallF), 0.01, 5);
       state.tau = clamp(num(ids.tauParam.value, state.tau), 0, 10);
       state.sp = clamp(num(ids.spParam.value, state.sp), 0.01, 10);
-      state.fs = clamp(num(ids.fsParam.value, state.fs), 0.1, 5);
     }
 
     function writeControls() {
@@ -386,21 +376,19 @@
       ids.timeNumber.value = state.time.toFixed(2);
       ids.maxTime.value = state.maxTime.toFixed(0);
       ids.fParam.value = state.F.toFixed(2);
-      ids.peParam.value = state.p.toFixed(2);
+      ids.peParam.value = state.s.toFixed(2);
       ids.smallFParam.value = state.smallF.toFixed(2);
       ids.tauParam.value = state.tau.toFixed(2);
       ids.spParam.value = state.sp.toFixed(2);
-      ids.fsParam.value = state.fs.toFixed(2);
 
       const p = pFormula(state.time);
       ids.timeOut.textContent = state.time.toFixed(2);
       ids.timeReadout.textContent = state.time.toFixed(2);
       ids.fOut.textContent = state.F.toFixed(2);
-      ids.peOut.textContent = state.p.toFixed(2);
+      ids.peOut.textContent = state.s.toFixed(2);
       ids.smallFOut.textContent = state.smallF.toFixed(2);
       ids.tauOut.textContent = state.tau.toFixed(2);
       ids.spOut.textContent = state.sp.toFixed(2);
-      ids.fsOut.textContent = state.fs.toFixed(2);
       ids.pValue.textContent = p.toFixed(4);
       ids.pReadout.textContent = p.toFixed(4);
     }
@@ -457,7 +445,7 @@
       ctx.font = "700 13px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.fillText("Time_i", (plot.left + plot.right) / 2, plot.bottom + 34);
+      ctx.fillText("Time_ip", (plot.left + plot.right) / 2, plot.bottom + 34);
 
       ctx.save();
       ctx.translate(18, (plot.top + plot.bottom) / 2);
@@ -549,8 +537,7 @@
       ids.peParam,
       ids.smallFParam,
       ids.tauParam,
-      ids.spParam,
-      ids.fsParam
+      ids.spParam
     ].forEach((el) => el.addEventListener("input", () => update("slider")));
 
     ids.timeNumber.addEventListener("input", () => update("number"));
